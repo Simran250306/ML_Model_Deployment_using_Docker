@@ -35,10 +35,10 @@ Quick start (Windows PowerShell)
    # GET root
    curl http://localhost:8000/
 
-   # POST predict (JSON body)
+   # POST predict (JSON body) using Postman 
    curl -Method POST -ContentType 'application/json' -Body '{"features": [5.1, 3.5, 1.4, 0.2]}' http://localhost:8000/predict
 
-6) Docker (optional)
+6) Docker
 
    Build image:
 

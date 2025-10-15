@@ -60,12 +60,6 @@ Troubleshooting
 
 - If Uvicorn exits unexpectedly when testing from scripts, prefer starting it without `--reload` if you need a stable background process for automated scripts.
 
-Further improvements (suggestions)
-
-- Add Pydantic request/response models for input validation and clearer 4xx responses.
-- Add unit/integration tests (pytest + FastAPI TestClient).
-- Pin dependency versions and add a lockfile for reproducible builds.
-- Harden the Docker image (use slim base, non-root user, multi-stage build).
 Step 1: Install the Python requirements using command: pip install -r requiremenst.txt
 
 Step 2: Install Docker and setup

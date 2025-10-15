@@ -12,4 +12,4 @@ Step 6: Uvicorn will start running on http://localhost:8000 and will show messag
 
 Step 7: Open Postman, select POST request and paste this link http://localhost:8000/predict 
         Select Body -> raw -> write {"features": [1, 2, 3, 4]} => class Virginica
-        You can use different values in features from data.dict present in client.py or you custom values and predict classes
+        You can use different values in features from data.dict present in client.py or you custom values and predict classes.

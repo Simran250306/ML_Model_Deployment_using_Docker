@@ -1,77 +1,159 @@
-Quick start (Windows PowerShell)
+# Iris Model Deployment with Docker
 
-1) Create and activate a virtual environment, then install requirements:
+This project demonstrates how to train a small machine-learning model and serve it as a web application inside Docker.
 
-   python -m venv .venv
-   .\.venv\Scripts\Activate.ps1; python -m pip install -r requirements.txt
+The project uses the built-in scikit-learn Iris dataset. A Random Forest classifier learns to identify an iris flower as `setosa`, `versicolor`, or `virginica` from four measurements:
 
-2) Train the model and save it to `app/model.joblib`:
+- Sepal length
+- Sepal width
+- Petal length
+- Petal width
 
-   python run.py
+The trained model is exposed through a FastAPI API, and a browser-based frontend lets users enter measurements and request predictions.
 
-3) Run the FastAPI server (development):
+## How It Works
 
-   uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
+1. `run.py` loads the Iris dataset and trains a `RandomForestClassifier`.
+2. The trained model is saved to `app/model.joblib`.
+3. `app/server.py` loads the saved model when the API starts.
+4. `POST /predict` receives flower measurements and returns the predicted species.
+5. `GET /ui` serves the browser frontend.
+6. The `Dockerfile` packages the API, model, frontend, and Python dependencies into one image.
 
-   Open http://localhost:8000/ to check the root endpoint (should return {"message": "Iris model API"}).
+## Project Structure
 
-4) Frontend (two options):
+```text
+.
+├── app/
+│   ├── model.joblib       # Saved trained model
+│   └── server.py          # FastAPI application
+├── client.py              # Example script for sending predictions
+├── Dockerfile             # Docker image definition
+├── frontend.html          # Browser interface
+├── requirements.txt       # Python dependencies
+└── run.py                 # Model training script
+```
 
-   - Same-origin (recommended): open the page served by the API:
+## Requirements
 
-       http://localhost:8000/ui
+- Python 3.11 or compatible Python 3 version
+- Docker Desktop, if running the container
 
-     This avoids CORS/preflight issues.
+## Run Locally Without Docker
 
-   - Static server (alternate): serve the repo root and open the page at:
+From the project directory in PowerShell:
 
-       python -m http.server 8001
-       http://localhost:8001/frontend.html
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python run.py
+uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
+```
 
-     If using this option, ensure the API is running and that CORS is enabled (the app already includes permissive CORS for development).
+Open the frontend at:
 
-5) Test prediction endpoints manually (PowerShell examples):
+```text
+http://localhost:8000/ui
+```
 
-   # GET root
-   curl http://localhost:8000/
+## Run with Docker
 
-   # POST predict (JSON body) using Postman 
-   curl -Method POST -ContentType 'application/json' -Body '{"features": [5.1, 3.5, 1.4, 0.2]}' http://localhost:8000/predict
+Generate the model before building the image:
 
-6) Docker
+```powershell
+python run.py
+```
 
-   Build image:
+Build the image:
 
-     docker build -t iris-model:latest .
+```powershell
+docker build -t iris-model:latest .
+```
 
-   Run container (map port 8000):
+Start a container:
 
-     docker run --name iris-container -p 8000:8000 iris-model:latest
+```powershell
+docker run --name iris-container -p 8000:8000 iris-model:latest
+```
 
-   Note: The Docker image expects `app/model.joblib` to be present in the `app/` directory at build time. Run `python run.py` locally before building, or modify the Dockerfile to include model training or download steps.
+The application is now available at:
 
-Troubleshooting
+```text
+http://localhost:8000/ui
+```
 
-- CORS errors ("Failed to fetch" in browser):
-  - Prefer serving the frontend from the same origin (`/ui`) to avoid CORS during development.
-  - If you serve the page from a different origin (file:// or http://localhost:8001), ensure the server is running and that the OPTIONS preflight returns Access-Control-Allow-Origin. The app includes permissive CORS for development but a server restart may be required after edits.
+To stop and remove the container later:
 
-- Model file missing: if you get a startup error about `app/model.joblib`, run `python run.py` to generate the model.
+```powershell
+docker rm -f iris-container
+```
 
-- If Uvicorn exits unexpectedly when testing from scripts, prefer starting it without `--reload` if you need a stable background process for automated scripts.
+## Use from Another Device
 
-Step 1: Install the Python requirements using command: pip install -r requiremenst.txt
+The Docker port mapping publishes port `8000` on the host computer. To access the application from a phone or another computer on the same Wi-Fi network:
 
-Step 2: Install Docker and setup
+1. Find the host computer's local IPv4 address:
 
-Step 3: Open Docker and keep it running. Install Docker extension for Visual Studio Code
+   ```powershell
+   ipconfig
+   ```
 
-Step 4: To build Docker, run docker build -t image_name .
+2. Find the address for the active network adapter, such as `192.168.1.42`.
+3. Open this URL on the other device:
 
-Step 5: To build Docker container, run  docker run --name container_name -p 8000:8000 image_name
+   ```text
+   http://192.168.1.42:8000/ui
+   ```
 
-Step 6: Uvicorn will start running on http://localhost:8000 and will show message {"message":"Iris model API"}
+Use the host computer's IP address instead of `localhost`. If Windows Firewall blocks the connection, allow inbound TCP traffic on port `8000` for private networks.
 
-Step 7: Open Postman, select POST request and paste this link http://localhost:8000/predict 
-        Select Body -> raw -> write {"features": [1, 2, 3, 4]} => class Virginica
-        You can use different values in features from data.dict present in client.py or you custom values and predict classes.
+This setup provides local-network access only. It does not publish the application to the public internet.
+
+## API Endpoints
+
+### Health check
+
+```http
+GET /
+```
+
+Response:
+
+```json
+{"message":"Iris model API"}
+```
+
+### Prediction
+
+```http
+POST /predict
+Content-Type: application/json
+```
+
+Request:
+
+```json
+{"features":[5.1,3.5,1.4,0.2]}
+```
+
+Response:
+
+```json
+{"predicted_class":"setosa"}
+```
+
+PowerShell example:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8000/predict `
+  -Method Post `
+  -ContentType 'application/json' `
+  -Body '{"features":[5.1,3.5,1.4,0.2]}'
+```
+
+## Notes
+
+- The model file must exist at `app/model.joblib` before building the Docker image.
+- The frontend uses the same-origin `/predict` URL, so it works through `localhost` and through the host computer's network IP.
+- The permissive CORS configuration is intended for development and demonstration purposes.

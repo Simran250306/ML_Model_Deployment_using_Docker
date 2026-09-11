@@ -5,61 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Iris Predictor</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
-    label { display:block; margin-top:12px }
-    input { width:120px; padding:6px; margin-left:6px }
-    button { margin-top:14px; padding:8px 12px }
-    pre { background:#f6f8fa; padding:12px; border-radius:6px }
+    :root {
+      --ink: #17231f;
+      --muted: #68746e;
+      --paper: #f5f7f1;
+      --panel: #fffef9;
+      --line: #dce4d8;
+      --leaf: #28745b;
+      --leaf-dark: #18523f;
+      --coral: #e8795d;
+      --shadow: 0 24px 60px rgba(29, 54, 43, .12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Georgia, 'Times New Roman', serif;
+      background: var(--paper);
+      background-image: radial-gradient(#dce8d8 1px, transparent 1px);
+      background-size: 22px 22px;
+    }
+    .shell { width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 58px 0 48px; }
+    .hero { max-width: 700px; margin-bottom: 34px; }
+    .eyebrow { margin: 0 0 12px; color: var(--coral); font: 700 12px sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(42px, 7vw, 76px); line-height: .98; letter-spacing: -.04em; font-weight: 500; }
+    .hero::before { content: 'IRIS SPECIES PREDICTOR'; display: block; margin-bottom: 36px; color: var(--leaf); font: 700 12px sans-serif; letter-spacing: .14em; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); gap: 22px; align-items: stretch; }
+    .panel { border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 254, 249, .94); box-shadow: var(--shadow); }
+    .controls { padding: 28px; }
+    .panel-title { margin: 0; font-size: 24px; font-weight: 500; }
+    .panel-copy { margin: 7px 0 24px; color: var(--muted); font: 14px/1.5 sans-serif; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: grid; gap: 8px; color: var(--muted); font: 12px sans-serif; }
+    input { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 13px 14px; color: var(--ink); background: #fff; font: 18px Georgia, serif; outline: none; transition: border-color .2s, box-shadow .2s; }
+    input:focus { border-color: var(--leaf); box-shadow: 0 0 0 3px #dcefe5; }
+    .actions { display: flex; gap: 10px; margin-top: 25px; }
+    button { border: 0; border-radius: 5px; padding: 13px 18px; cursor: pointer; font: 700 13px sans-serif; transition: transform .2s, background .2s; }
+    button:hover { transform: translateY(-1px); }
+    .primary { color: white; background: var(--leaf-dark); flex: 1; }
+    .primary:hover { background: var(--leaf); }
+    .secondary { color: var(--leaf-dark); background: #e6f0e7; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .examples span { width: 100%; color: var(--muted); font: 11px sans-serif; text-transform: uppercase; letter-spacing: .1em; }
+    .sample { padding: 8px 10px; color: var(--leaf-dark); background: transparent; border: 1px solid var(--line); font-size: 11px; }
+    .sample:hover { background: #eef5ed; }
+    .result { min-height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: 28px; color: white; background: var(--leaf-dark); overflow: hidden; position: relative; }
+    .result::after { content: ''; position: absolute; width: 230px; height: 230px; right: -80px; bottom: -80px; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; box-shadow: 0 0 0 28px rgba(255,255,255,.04), 0 0 0 58px rgba(255,255,255,.035); }
+    .result-heading { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+    .result .panel-title { color: white; }
+    .badge { border: 1px solid rgba(255,255,255,.3); border-radius: 99px; padding: 6px 9px; color: #d8f0dc; font: 11px sans-serif; }
+    .answer { margin: 80px 0 20px; position: relative; z-index: 1; }
+    .answer-label { color: #b9d8c0; font: 12px sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+    #result { margin: 10px 0 0; font-size: clamp(34px, 5vw, 56px); line-height: 1; text-transform: capitalize; }
+    .result-note { max-width: 270px; margin: 0; color: #c4d8c8; font: 13px/1.5 sans-serif; position: relative; z-index: 1; }
+    .error { color: #ffc5b7 !important; font: 18px/1.4 sans-serif !important; text-transform: none !important; }
+    @media (max-width: 720px) {
+      .shell { width: min(100% - 24px, 540px); padding-top: 28px; }
+      .workspace { grid-template-columns: 1fr; }
+      .result { min-height: 270px; }
+      .answer { margin-top: 48px; }
+    }
+    @media (max-width: 420px) {
+      .field-grid { grid-template-columns: 1fr; gap: 12px; }
+      .controls, .result { padding: 22px; }
+      .actions { flex-direction: column; }
+    }
   </style>
 </head>
 <body>
-  <h1>Iris Species Predictor</h1>
-  <p>Enter measurements in centimeters and click Predict.</p>
+  <main class="shell">
+    <section class="hero">
+      <h1>Which iris<br>is this?</h1>
+    </section>
 
-  <form id="predict-form">
-    <label>Sepal length (cm): <input type="number" step="0.1" id="sepal_length" required value="5.1"></label>
-    <label>Sepal width  (cm): <input type="number" step="0.1" id="sepal_width" required value="3.5"></label>
-    <label>Petal length (cm): <input type="number" step="0.1" id="petal_length" required value="1.4"></label>
-    <label>Petal width  (cm): <input type="number" step="0.1" id="petal_width" required value="0.2"></label>
+    <section class="workspace" aria-label="Iris prediction workspace">
+      <form class="panel controls" id="predict-form">
+        <h2 class="panel-title">Flower measurements</h2>
+        <p class="panel-copy">All values are measured in centimeters.</p>
+        <div class="field-grid">
+          <label for="sepal_length">Sepal length<input type="number" step="0.1" min="0" id="sepal_length" required value="5.1"></label>
+          <label for="sepal_width">Sepal width<input type="number" step="0.1" min="0" id="sepal_width" required value="3.5"></label>
+          <label for="petal_length">Petal length<input type="number" step="0.1" min="0" id="petal_length" required value="1.4"></label>
+          <label for="petal_width">Petal width<input type="number" step="0.1" min="0" id="petal_width" required value="0.2"></label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Identify species <span aria-hidden="true">&#8594;</span></button>
+          <button class="secondary" type="button" id="reset-button">Reset</button>
+        </div>
+        <div class="examples" aria-label="Example flowers">
+          <span>Try an example</span>
+          <button class="sample" type="button" data-values="5.1,3.5,1.4,0.2">Setosa</button>
+          <button class="sample" type="button" data-values="6.0,2.9,4.5,1.5">Versicolor</button>
+          <button class="sample" type="button" data-values="6.3,3.3,6.0,2.5">Virginica</button>
+        </div>
+      </form>
 
-    <button type="submit">Predict</button>
-  </form>
-
-  <h2>Result</h2>
-  <pre id="result">No prediction yet.</pre>
+      <aside class="panel result" aria-live="polite">
+        <div class="result-heading"><h2 class="panel-title">Prediction</h2><span class="badge">MODEL READY</span></div>
+        <div class="answer"><span class="answer-label">Predicted species</span><p id="result">Awaiting data</p></div>
+        <p class="result-note">The result is generated by the Iris Random Forest model</p>
+      </aside>
+    </section>
+  </main>
 
   <script>
     const form = document.getElementById('predict-form');
     const resultEl = document.getElementById('result');
+    const fields = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'];
+    const defaultValues = ['5.1', '3.5', '1.4', '0.2'];
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      resultEl.textContent = 'Predicting...';
+    function setValues(values) {
+      fields.forEach((field, index) => { document.getElementById(field).value = values[index]; });
+    }
 
-      const features = [
-        parseFloat(document.getElementById('sepal_length').value),
-        parseFloat(document.getElementById('sepal_width').value),
-        parseFloat(document.getElementById('petal_length').value),
-        parseFloat(document.getElementById('petal_width').value)
-      ];
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      resultEl.className = '';
+      resultEl.textContent = 'Thinking...';
+      const features = fields.map((field) => Number(document.getElementById(field).value));
 
       try {
-        const resp = await fetch('http://localhost:8000/predict', {
+        const response = await fetch('/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ features })
         });
-
-        if (!resp.ok) {
-          const text = await resp.text();
-          throw new Error(`Server returned ${resp.status}: ${text}`);
-        }
-
-        const data = await resp.json();
-        resultEl.textContent = JSON.stringify(data, null, 2);
-      } catch (err) {
-        resultEl.textContent = 'Error: ' + err.message;
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const data = await response.json();
+        resultEl.textContent = data.predicted_class;
+      } catch (error) {
+        resultEl.className = 'error';
+        resultEl.textContent = 'Could not reach the API';
       }
+    });
+
+    document.getElementById('reset-button').addEventListener('click', () => {
+      setValues(defaultValues);
+      resultEl.className = '';
+      resultEl.textContent = 'Awaiting data';
+    });
+
+    document.querySelectorAll('.sample').forEach((button) => {
+      button.addEventListener('click', () => setValues(button.dataset.values.split(',')));
     });
   </script>
 </body>
